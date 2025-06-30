@@ -48,7 +48,7 @@ export class PaymentController {
       }
 
       // Process the webhook
-      const result = await this.paymentService.handleWebhook(JSON.parse(webhookData));
+      const result = await this.paymentService.handleWebhook(webhookData);
       
       return {
         success: true,
