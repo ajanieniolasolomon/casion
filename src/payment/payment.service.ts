@@ -17,66 +17,51 @@ export class PaymentService {
     this.apiKey = this.configService.get<string>('NOWPAYMENTS_API_KEY');
   }
 
-  
-
   async createPayment(createPaymentDto: CreatePaymentDto) {
-    const { userId, amount, currency } = createPaymentDto;
-// console.log(`${req.protocol}://${req.get('Host')}${req.originalUrl}`);
+    console.log(createPaymentDto);
+    const { userId, amount, currency, paymentId, paymentUrl } = createPaymentDto;
+
     try {
-      // Create payment with NOWPayments
-      const paymentData = {
-        price_amount: amount,
-        price_currency: 'usd',
-        pay_currency: currency.toLowerCase(),
-        ipn_callback_url: `${this.configService.get('APP_URL')}/payment/webhook`,
-        order_id: `dice-${Date.now()}`,
-        order_description: 'Dice Casino Deposit',
-      };
-
-      const response = await axios.post(
-        `${this.nowPaymentsApiUrl}/payment`,
-        paymentData,
-        {
-          headers: {
-            'x-api-key': this.apiKey,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      // Save transaction to database
-      const transaction = await this.prisma.transaction.create({
+      // Create payment record in database
+      const payment = await this.prisma.transaction.create({
         data: {
           userId,
-          type: 'DEPOSIT',
           amount,
+             type: 'DEPOSIT',
           currency,
-          paymentId: response.data.payment_id,
-          paymentUrl: response.data.pay_address,
-          status: 'PENDING',
-          description: 'Crypto deposit',
+          paymentId,
+          paymentUrl,
+       status: 'PENDING',
+          createdAt: new Date(),
         },
       });
 
       return {
-        transactionId: transaction.id,
-        paymentId: response.data.payment_id,
-        paymentUrl: response.data.pay_address,
-        amount: response.data.pay_amount,
-        currency: response.data.pay_currency,
+        success: true,
+        message: 'Payment created successfully',
+        data: payment,
       };
     } catch (error) {
-      throw new Error(`Payment creation failed: ${error.message}`);
+      throw new Error(`Failed to create payment: ${error.message}`);
     }
   }
 
+
+
   async handleWebhook(webhookData: any) {
+
+
+
+
+
+
+    
 
     console.log(webhookData)
     const { payment_id, payment_status } = webhookData;
 
     const transaction = await this.prisma.transaction.findUnique({
-      where: { paymentId: payment_id },
+      where: { paymentId: payment_id.toString() },
     });
 
     if (!transaction) {

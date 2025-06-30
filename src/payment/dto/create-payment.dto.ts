@@ -1,17 +1,26 @@
+
+// DTO for creating payment
+import { IsString, IsNumber, IsOptional, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString, Min } from 'class-validator';
 
 export class CreatePaymentDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'User ID who is making the payment' })
   @IsString()
   userId: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Payment amount' })
   @IsNumber()
-  @Min(0.01)
   amount: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Payment currency (e.g., USD, EUR)' })
   @IsString()
-  currency: string; // BTC, ETH, etc.
+  currency: string;
+
+  @ApiProperty({ description: 'Payment ID from payment provider' })
+  @IsString()
+  paymentId: string;
+
+  @ApiProperty({ description: 'Payment URL for completing the payment' })
+  @IsUrl()
+  paymentUrl: string;
 }
