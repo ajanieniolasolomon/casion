@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Req } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -12,13 +12,16 @@ export class PaymentService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    @Req() req: Request
   ) {
     this.apiKey = this.configService.get<string>('NOWPAYMENTS_API_KEY');
   }
 
+  
+
   async createPayment(createPaymentDto: CreatePaymentDto) {
     const { userId, amount, currency } = createPaymentDto;
-
+// console.log(`${req.protocol}://${req.get('Host')}${req.originalUrl}`);
     try {
       // Create payment with NOWPayments
       const paymentData = {
