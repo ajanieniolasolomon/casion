@@ -10,5 +10,6 @@ import { ConfigService } from '@nestjs/config';
   imports: [PrismaModule, UserModule,BalanceModule],
   controllers: [PaymentController],
   providers: [PaymentService,ConfigService],
+  exports:[PaymentService]
 })
 export class PaymentModule {}
