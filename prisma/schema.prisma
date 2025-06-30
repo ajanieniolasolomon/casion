@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  transactions Transaction[]
+  gameResults  GameResult[]
+  balances     Balance[]
+
+  @@map("users")
+}
+
+model Balance {
+  id        String   @id @default(cuid())
+  userId    String
+  balance   Decimal  @default(0.00) @db.Decimal(10, 2)
+  date      DateTime @db.Date // Date for which this balance is calculated
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Ensure one balance record per user per date
+  @@unique([userId, date])
+  @@map("balances")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  type            TransactionType
+  amount          Decimal           @db.Decimal(10, 2)
+  status          TransactionStatus @default(PENDING)
+  paymentId       String?           @unique // NOWPayments payment ID
+  paymentUrl      String?           // Payment URL from NOWPayments
+  currency        String?           // Crypto currency (BTC, ETH, USDT, etc.)
+  description     String?
+  webhookReceived Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for better performance
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model GameResult {
+  id         String   @id @default(cuid())
+  userId     String
+  gameType   GameType @default(DICE)
+  betAmount  Decimal  @db.Decimal(10, 2)
+  prediction Int      // User's prediction (1-6 for dice, 0-1 for coin flip, etc.)
+  result     Int      // Actual game result
+  payout     Decimal  @default(0.00) @db.Decimal(10, 2)
+  isWin      Boolean
+  multiplier Decimal  @default(1.00) @db.Decimal(5, 2) // Payout multiplier used
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for better performance
+  @@index([userId])
+  @@index([gameType])
+  @@index([createdAt])
+  @@map("game_results")
+}
+
+// Enums
+enum TransactionType {
+  DEPOSIT    // Crypto deposits
+  WITHDRAWAL // User withdrawals
+  GAME_WIN   // Winnings from games
+  GAME_LOSS  // Losses from games
+  BONUS      // Bonus credits
+  REFUND     // Refunded amounts
+}
+
+enum TransactionStatus {
+  PENDING   // Transaction initiated but not confirmed
+  COMPLETED // Transaction successfully completed
+  FAILED    // Transaction failed
+  CANCELLED // Transaction was cancelled
+  EXPIRED   // Transaction expired (for crypto payments)
+}
+
+enum GameType {
+  DICE      // 3D dice rolling game
+  COIN_FLIP // Coin flip game
+  SLOTS     // Slot machine game
+  ROULETTE  // Roulette game
+  BLACKJACK // Blackjack game
+}
+
+// Additional indexes for complex queries
+// These can be added if needed for performance optimization
+
+// Example of a view for daily statistics (PostgreSQL only)
+// Uncomment if using PostgreSQL and need this view
+
+// CREATE VIEW daily_stats AS
+// SELECT 
+//   DATE(created_at) as game_date,
+//   game_type,
+//   COUNT(*) as total_games,
+//   SUM(bet_amount) as total_bets,
+//   SUM(payout) as total_payouts,
+//   AVG(bet_amount) as avg_bet,
+//   COUNT(CASE WHEN is_win = true THEN 1 END) as wins,
+//   COUNT(CASE WHEN is_win = false THEN 1 END) as losses
+// FROM game_results 
+// GROUP BY DATE(created_at), game_type
+// ORDER BY game_date DESC;
