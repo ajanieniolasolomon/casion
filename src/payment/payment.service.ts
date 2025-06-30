@@ -58,10 +58,10 @@ export class PaymentService {
     
 
 
-    const { payment_id, payment_status } = webhookData;
+    const { payment_id, invoice_id, payment_status } = webhookData;
 
     const transaction = await this.prisma.transaction.findUnique({
-      where: { paymentId: payment_id.toString() },
+      where: { paymentId: invoice_id.toString() },
     });
 
     if (!transaction) {
