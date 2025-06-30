@@ -12,7 +12,7 @@ export class PaymentService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
-    @Req() req: Request
+   
   ) {
     this.apiKey = this.configService.get<string>('NOWPAYMENTS_API_KEY');
   }
